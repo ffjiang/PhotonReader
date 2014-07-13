@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"image/jpeg"
 
 	"github.com/ffjiang/PhotonReader/seamcarver"
 )
@@ -12,6 +13,9 @@ func main() {
 	fmt.Printf("Hello, world.")
 
 	imgMatrix := loadImage("images/sampletext.jpg")
+	for i, row := range imgMatrix.Matrix {
+		fmt.Printf("%v", row)
+	}
 }
 
 func loadImage(fileName string) seamcarver.ImageMatrix {
@@ -34,21 +38,13 @@ func loadImage(fileName string) seamcarver.ImageMatrix {
 		NumCols: img.Bounds.Max.Y - img.Bounds.Min.Y + 1,
 	}
 
-	// Create a luminance matrix
-	luminanceMatrix := make([][]float64, imgMatrix.NumRows)
-	for i, row := range luminanceMatrix {
+	// ... with a matrix representing luminance.
+	imgMatrix.Matrix := make([][]float64, imgMatrix.NumRows)
+	for i, row := range imgMatrix.Matrix {
 		row = make([]float64, imgMatrix.NumCols)
 		for j, column := range row {
 			column = Luminance(img.At(i, j))
 		}
 	}
-
-	// Convert the luminance matrix into an energy gradient magnitude matrix
-	imgMatrix.Matrix = make([][]float64, imgMatrix.NumRows)
-	for i, row := range luminanceMatrix {
-		row = make([]float64, imgMatrix.NumCols)
-		for j, column := range row {
-			column = 0 // this is supposed to be the magnitude of the horizontal and vertical gradients (in luminosity)
-		}
-	}
+	return imgMatrix
 }

@@ -18,15 +18,15 @@ type Vertex struct {
 }
 
 // Fix this stupid hash method
-func (v Vertex) HashCode() {
+func (v Vertex) HashCode() int64 {
 	prime := 31
 	result := 1
-	return result
+	return int64(result * prime)
 }
 
 // Checks for equality of location
 func (v Vertex) Equals(w Vertex) bool {
-	if v.X == w.X && v.Y == w.Y {
+	if v.Point.X == w.Point.X && v.Point.Y == w.Point.Y {
 		return true
 	}
 	return false
@@ -36,12 +36,13 @@ type Edge struct {
 	ID     string
 	Source *Vertex
 	Dest   *Vertex
-	Weight int
+	Weight float64
 }
 
-func (e Edge) CalcWeight() {
-	xDist := math.Abs(float64(e.Dest.X - e.Source.X))
-	yDist := math.Abs(float64(e.Dest.Y - e.Source.Y))
+// this function is wrong
+func (e Edge) CalcWeight() float64 {
+	xDist := math.Abs(float64(e.Dest.Point.X - e.Source.Point.X))
+	yDist := math.Abs(float64(e.Dest.Point.Y - e.Source.Point.Y))
 	return math.Sqrt((xDist * xDist) + (yDist * yDist))
 }
 
