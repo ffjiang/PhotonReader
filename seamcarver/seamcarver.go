@@ -70,7 +70,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// North-east
 			if x < lumMatrix.NumCols-1 && y > 0 {
-				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1]) / math.Sqrt2
+				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1]) * math.Sqrt2
 			} else {
 				imgGraph[x][y].Weights[1] = -1
 			}
@@ -82,7 +82,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// South-east
 			if x < lumMatrix.NumCols-1 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1]) / math.Sqrt2
+				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1]) * math.Sqrt2
 			} else {
 				imgGraph[x][y].Weights[3] = -1
 			}
@@ -94,7 +94,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// South-west
 			if x > 0 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1]) / math.Sqrt2
+				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1]) * math.Sqrt2
 			} else {
 				imgGraph[x][y].Weights[5] = 0
 			}
@@ -105,8 +105,8 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 				imgGraph[x][y].Weights[6] = -1
 			}
 			// North-west
-			if x > 0 && jy> 0 {
-				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1]) / math.Sqrt2
+			if x > 0 && jy > 0 {
+				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1]) * math.Sqrt2
 			} else {
 				imgGraph[x][y].Weights[7] = -1
 			}
@@ -169,30 +169,45 @@ func ShortestPath(start image.Point, imgGraph ImageGraph) Path {
 		minCost := math.MaxFloat64
 		// North
 		if N > 0 {
-			if N+cost < imgGraph[x-1][y].Cost {
-				imgGraph[x-1][y].Cost = N + cost
+			if N+cost < imgGraph[x][y-1].Cost {
+				imgGraph[x][y-1].Cost = N + cost
 			}
-			if imgGraph[x-1][y].Cost < minCost {
-				minCost = imgGraph[x-1][y].Cost
-				minCostNode.X, minCostNode.Y = x-1, y
+			if imgGraph[x][y-1].Cost < minCost {
+				minCost = imgGraph[x][y-1].Cost
+				minCostNode.X, minCostNode.Y = x, y-1
 			}
 		}
 		// North-east
 		if NE > 0 {
-			if NE+cost < imgGraph[x-1][y+1].Cost {
-				imgGraph[x-1][y+1].Cost = NE + cost
+			if NE+cost < imgGraph[x+1][y-1].Cost {
+				imgGraph[x+1][y-1].Cost = NE + cost
 			}
-			if imgGraph[x-1][y+1].Cost < minCost {
-				minCost = imgGraph[x-1][y+1]
-				minCostNode.X, minCostNode.Y = x-1, y+1
+			if imgGraph[x+1][y-1].Cost < minCost {
+				minCost = imgGraph[x+1][y-1].Cost
+				minCostNode.X, minCostNode.Y = x+1, y-1
 			}
 		}
 		// East
 		if E > 0 {
-			if E + cost < imgGraph[x][y]
+			if E+cost < imgGraph[x+1][y].Cost {
+				imgGraph[x+1][y].Cost = E + cost
+			}
+			if imgGraph[x+1][y].Cost < minCost {
+				minCost = imgGraph[x+1][y].Cost
+				minCostNode.X, minCostNode.Y = x+1, y
 			}
 		}
+		// South-east
+		if SE > 0 {
+			if SE+cost < imgGraph[x+1][y+1].Cost {
+				imgGraph[x+1][y+1].Cost = SE + cost
+			}
+			if imgGraph[x+1][y+1].Cost < minCost {
+				minCost = imgGraph[x+1][y+1].Cost
+				minCostNode.X, minCostNode.y = x+1, y+1
+			}
 		}
+		// South
 
 		nodesUnvisited--
 	}
