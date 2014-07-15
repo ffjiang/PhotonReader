@@ -13,6 +13,6 @@ func main() {
 	for _, row := range lumMatrix.Matrix {
 		log.Printf("%v", row)
 	}
-	seamcarver.Carve(lumMatrix)
-
+	imgGraph := seamcarver.SetWeights(lumMatrix)
+	seamcarver.Carve(imgGraph)
 }

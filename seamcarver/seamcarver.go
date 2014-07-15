@@ -23,6 +23,8 @@ func LoadImage(fileName string) LuminanceMatrix {
 		log.Printf("Cannot decode jpeg: %v", err)
 	}
 
+	log.Printf("%T,%v", img, img)
+
 	// Initialise the LuminanceMatrix object...
 	lumMatrix := LuminanceMatrix{
 		NumRows: img.Bounds().Max.X - img.Bounds().Min.X,
@@ -46,65 +48,72 @@ func Luminance(colour color.Color) float64 {
 	return 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
 }
 
-func Carve(lumMatrix LuminanceMatrix) {
-	imgGraph := make(Graph, lumMatrix.NumRows)
+func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
+	imgGraph := make(ImageGraph, lumMatrix.NumRows)
 	for i := range lumMatrix.Matrix {
 		imgGraph[i] = make([]Vertex, lumMatrix.NumCols)
 		for j := range lumMatrix.Matrix[i] {
 			imgGraph[i][j] = Vertex{
-				Cost:   math.MaxFloat64,
-				Weight: [8]float64{},
+				Cost:    math.MaxFloat64,
+				Weights: [8]float64{},
 			}
 			// North
 			if i > 0 {
-				imgGraph[i][j].Weight[0] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i-1][j])
+				imgGraph[i][j].Weights[0] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i-1][j])
 			} else {
-				imgGraph[i][j].Weight[0] = -1
+				imgGraph[i][j].Weights[0] = -1
 			}
 			// North-east
 			if i > 0 && j < lumMatrix.NumCols {
-				imgGraph[i][j].Weight[1] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i-1][j+1]) / math.Sqrt2
+				imgGraph[i][j].Weights[1] = math.Abs(lumMatrix.Matrix[i][j]-lumMatrix.Matrix[i-1][j+1]) / math.Sqrt2
 			} else {
-				imgGraph[i][j].Weight[1] = -1
+				imgGraph[i][j].Weights[1] = -1
 			}
 			// East
 			if j < lumMatrix.NumCols {
-				imgGraph[i][j].Weight[2] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i][j+1])
+				imgGraph[i][j].Weights[2] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i][j+1])
 			} else {
-				imgGraph[i][j].Weight[2] = -1
+				imgGraph[i][j].Weights[2] = -1
 			}
 			// South-east
-			if i < lumMatrix.Matrix.NumRows && j < lumMatrix.Matrix.NumCols {
-				imgGraph[i][j].Weight[3] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i+1][j+1]) / math.Sqrt2
+			if i < lumMatrix.NumRows && j < lumMatrix.NumCols {
+				imgGraph[i][j].Weights[3] = math.Abs(lumMatrix.Matrix[i][j]-lumMatrix.Matrix[i+1][j+1]) / math.Sqrt2
 			} else {
-				imgGraph[i][j].Weight[3] = -1
+				imgGraph[i][j].Weights[3] = -1
 			}
 			// South
-			if i < lumMatrix.Matrix.NumRows {
-				imgGraph[i][j].Weight[4] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i+1][j])
+			if i < lumMatrix.NumRows {
+				imgGraph[i][j].Weights[4] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i+1][j])
 			} else {
-				imgGraph[i][j].Weight[4] = -1
+				imgGraph[i][j].Weights[4] = -1
 			}
 			// South-west
-			if i < lumMatrix.Matrix.NumRows && j > 0 {
-				imgGraph[i][j].Weight[5] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i+1][j-1]) / math.Sqrt2
+			if i < lumMatrix.NumRows && j > 0 {
+				imgGraph[i][j].Weights[5] = math.Abs(lumMatrix.Matrix[i][j]-lumMatrix.Matrix[i+1][j-1]) / math.Sqrt2
 			} else {
-				imgGraph[i][j].Weight[5] = 0
+				imgGraph[i][j].Weights[5] = 0
 			}
 			// West
 			if j > 0 {
-				imgGraph[i][j].Weight[6] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i][j-1])
+				imgGraph[i][j].Weights[6] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i][j-1])
 			} else {
-				imgGraph[i][j].Weight[6] = -1
+				imgGraph[i][j].Weights[6] = -1
 			}
 			// North-west
 			if i > 0 && j > 0 {
-				imgGraph[i][j].Weight[7] = math.Abs(lumMatrix.Matrix[i][j] - lumMatrix.Matrix[i-1][j-1]) / math.Sqrt2
+				imgGraph[i][j].Weights[7] = math.Abs(lumMatrix.Matrix[i][j]-lumMatrix.Matrix[i-1][j-1]) / math.Sqrt2
 			} else {
-				imgGraph[i][j].Weight[7] = -1
+				imgGraph[i][j].Weights[7] = -1
 			}
 		}
-		}
+	}
+	return imgGraph
+}
+
+func Carve(imgGraph ImageGraph) {
+	graphLength := len(imgGraph)
+	for i := 0; i < graphLength; i += 10 {
+		log.Printf("hi")
 	}
 }
 

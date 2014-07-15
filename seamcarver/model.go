@@ -1,7 +1,7 @@
 package seamcarver
 
 import (
-	"image"
+//"image"
 )
 
 type LuminanceMatrix struct {
@@ -21,14 +21,6 @@ func (v Vertex) HashCode() int64 {
 	prime := 31
 	result := 1
 	return int64(result * prime)
-}
-
-// Checks for equality of location
-func (v Vertex) Equals(w Vertex) bool {
-	if v.Point.X == w.Point.X && v.Point.Y == w.Point.Y {
-		return true
-	}
-	return false
 }
 
 type ImageGraph [][]Vertex
