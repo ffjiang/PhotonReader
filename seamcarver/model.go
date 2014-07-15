@@ -1,7 +1,7 @@
 package seamcarver
 
 import (
-//"image"
+	"image"
 )
 
 type LuminanceMatrix struct {
@@ -14,6 +14,10 @@ type Vertex struct {
 	Cost float64
 	// Energy gradient magnitude in each direction, clockwise starting from north
 	Weights [8]float64
+	// Whether this Vertex is connected to the virtual node
+	EndZone bool
+	// The previous node in the path
+	Previous image.Point
 }
 
 // Fix this stupid hash method
@@ -24,3 +28,5 @@ func (v Vertex) HashCode() int64 {
 }
 
 type ImageGraph [][]Vertex
+
+type Path []image.Point

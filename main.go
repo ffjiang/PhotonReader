@@ -9,10 +9,11 @@ import (
 func main() {
 	log.Printf("Hello, world.")
 
-	lumMatrix := seamcarver.LoadImage("images/sampletext.jpg")
-	for _, row := range lumMatrix.Matrix {
-		log.Printf("%v", row)
-	}
+	img := seamcarver.LoadImage("images/sampletext.jpg")
+
+	lumMatrix := seamcarver.CreateLumMatrix(img)
+
 	imgGraph := seamcarver.SetWeights(lumMatrix)
-	seamcarver.Carve(imgGraph)
+
+	seamcarver.Carve(img, imgGraph)
 }
