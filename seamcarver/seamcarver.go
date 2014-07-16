@@ -67,7 +67,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 
 			// North
 			if y > 0 {
-				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y-1])
+				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y-1]) * 2
 			} else {
 				imgGraph[x][y].Weights[0] = -1
 			}
@@ -91,7 +91,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// South
 			if y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y+1])
+				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y+1]) * 2
 			} else {
 				imgGraph[x][y].Weights[4] = -1
 			}
