@@ -16,8 +16,9 @@ type Vertex struct {
 	Weights [8]float64
 	// Whether this Vertex is connected to the virtual node
 	EndZone bool
+	Coords  Point
 	// The previous node in the path
-	Previous image.Point
+	Previous Point
 }
 
 // Fix this stupid hash method
@@ -29,4 +30,38 @@ func (v Vertex) HashCode() int64 {
 
 type ImageGraph [][]Vertex
 
-type Path []image.Point
+type Path []Point
+
+func (path *Path) Add(p Point) {
+	*path = append(*path, point)
+}
+
+type Point image.Point
+
+// Minimum priority queue built using the heap interface
+type PriorityQueue []*Vertex
+
+func (pq PriorityQueue) Len() int {
+	return len(pq)
+}
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq[i].Cost < pq[j].Cost
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	vertex := x.(*Vertex)
+	*pq = append(*pq, vertex)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	vertex := old[n-1]
+	*pq = old[:n-1]
+	return vertex
+}
