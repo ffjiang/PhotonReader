@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime/pprof"
 )
 
 func LoadImage(fileName string) image.Image {
@@ -31,12 +32,12 @@ func LoadImage(fileName string) image.Image {
 func CreateLumMatrix(img image.Image) LuminanceMatrix {
 	// Initialise the LuminanceMatrix object...
 	lumMatrix := LuminanceMatrix{
-		NumRows: img.Bounds().Dx(),
-		NumCols: img.Bounds().Dy(),
+		NumCols: img.Bounds().Dx(),
+		NumRows: img.Bounds().Dy(),
 	}
-	lumMatrix.Matrix = make([][]float64, lumMatrix.NumRows)
+	lumMatrix.Matrix = make([][]float64, lumMatrix.NumCols)
 	for i := range lumMatrix.Matrix {
-		lumMatrix.Matrix[i] = make([]float64, lumMatrix.NumCols)
+		lumMatrix.Matrix[i] = make([]float64, lumMatrix.NumRows)
 		for j := range lumMatrix.Matrix[i] {
 			lumMatrix.Matrix[i][j] = Luminance(img.At(i, j))
 		}
@@ -51,9 +52,9 @@ func Luminance(colour color.Color) float64 {
 }
 
 func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
-	imgGraph := make(ImageGraph, lumMatrix.NumRows)
+	imgGraph := make(ImageGraph, lumMatrix.NumCols)
 	for x := range lumMatrix.Matrix {
-		imgGraph[x] = make([]Vertex, lumMatrix.NumCols)
+		imgGraph[x] = make([]Vertex, lumMatrix.NumRows)
 		for y := range lumMatrix.Matrix[x] {
 			imgGraph[x][y] = Vertex{
 				Cost:     math.MaxFloat64,
@@ -67,13 +68,13 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 
 			// North
 			if y > 0 {
-				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y-1]) * 2
+				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y-1])*5 + 3
 			} else {
 				imgGraph[x][y].Weights[0] = -1
 			}
 			// North-east
 			if x < lumMatrix.NumCols-1 && y > 0 {
-				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1]) * math.Sqrt2
+				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1])*3 + 1
 			} else {
 				imgGraph[x][y].Weights[1] = -1
 			}
@@ -85,31 +86,31 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// South-east
 			if x < lumMatrix.NumCols-1 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1]) * math.Sqrt2
+				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1])*3 + 1
 			} else {
 				imgGraph[x][y].Weights[3] = -1
 			}
 			// South
 			if y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x][y+1]) * 2
+				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y+1])*5 + 3
 			} else {
 				imgGraph[x][y].Weights[4] = -1
 			}
 			// South-west
 			if x > 0 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1]) * math.Sqrt2
+				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1])*3 + 1
 			} else {
 				imgGraph[x][y].Weights[5] = 0
 			}
 			// West
 			if x > 0 {
-				imgGraph[x][y].Weights[6] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x-1][y])
+				imgGraph[x][y].Weights[6] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y])*10 + 5
 			} else {
 				imgGraph[x][y].Weights[6] = -1
 			}
 			// North-west
 			if x > 0 && y > 0 {
-				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1]) * math.Sqrt2
+				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1])*3 + 1
 			} else {
 				imgGraph[x][y].Weights[7] = -1
 			}
@@ -130,9 +131,18 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 	for j := 0; j < height; j++ {
 		imgGraph[width-1][j].EndZone = true
 	}
+
 	// Go along y-axis, or side of page
-	for j := 0; j < height; j += 10 {
-		ShortestPath(Point{X: 0, Y: j}, imgGraph)
+	for j := 0; j < height; j += 100 {
+		imgGraphCopy := make(ImageGraph, width)
+		for x := range imgGraphCopy {
+			imgGraphCopy[x] = make([]Vertex, height)
+			copy(imgGraphCopy[x], imgGraph[x])
+		}
+		path := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
+		for _, point := range path {
+			dstImg.Set(point.X, point.Y, color.Black)
+		}
 	}
 
 	// Write result
@@ -143,16 +153,17 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 
 // Djikstra's shortest path algorithm
 func ShortestPath(start Point, imgGraph ImageGraph) Path {
+	log.Printf("ShortestPath called")
 	// Setup data structures
 	visited := map[Point]bool{}
 	imgGraph[start.X][start.Y].Cost = 0
 	visitableNodes := PriorityQueue{&imgGraph[start.X][start.Y]}
 	heap.Init(&visitableNodes)
 	isVisitable := map[Point]bool{start: true}
-	path := Path{}
+	var currentNode Point
 
 	for len(visitableNodes) > 0 {
-		currentNode := heap.Pop(&visitableNodes).(*Vertex).Coords]
+		currentNode = heap.Pop(&visitableNodes).(*Vertex).Coords
 		isVisitable[currentNode] = false
 		visited[currentNode] = true
 		x := currentNode.X
@@ -185,8 +196,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x][y-1].Cost = N + cost
 				imgGraph[x][y-1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x][y-1])
-			isVisitable[Point{X: x, Y: y - 1}] = true
+			if (!isVisitable[Point{X: x, Y: y - 1}]) {
+				isVisitable[Point{X: x, Y: y - 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x][y-1])
+			}
 		}
 		// North-east
 		if NE > 0 && !visited[Point{X: x + 1, Y: y - 1}] {
@@ -194,8 +207,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x+1][y-1].Cost = NE + cost
 				imgGraph[x+1][y-1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x+1][y-1])
-			isVisitable[Point{X: x + 1, Y: y - 1}] = true
+			if !isVisitable[Point{X: x + 1, Y: y - 1}] {
+				isVisitable[Point{X: x + 1, Y: y - 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x+1][y-1])
+			}
 		}
 		// East
 		if E > 0 && !visited[Point{X: x + 1, Y: y}] {
@@ -203,8 +218,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x+1][y].Cost = E + cost
 				imgGraph[x+1][y].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x+1][y])
-			isVisitable[Point{X: x + 1, Y: y}] = true
+			if !isVisitable[Point{X: x + 1, Y: y}] {
+				isVisitable[Point{X: x + 1, Y: y}] = true
+				heap.Push(&visitableNodes, &imgGraph[x+1][y])
+			}
 		}
 		// South-east
 		if SE > 0 && !visited[Point{X: x + 1, Y: y + 1}] {
@@ -212,8 +229,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x+1][y+1].Cost = SE + cost
 				imgGraph[x+1][y+1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x+1][y+1])
-			isVisitable[Point{X: x + 1, Y: y + 1}] = true
+			if !isVisitable[Point{X: x + 1, Y: y + 1}] {
+				isVisitable[Point{X: x + 1, Y: y + 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x+1][y+1])
+			}
 		}
 		// South
 		if S > 0 && !visited[Point{X: x, Y: y + 1}] {
@@ -221,8 +240,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x][y+1].Cost = S + cost
 				imgGraph[x][y+1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x][y+1])
-			isVisitable[Point{X: x, Y: y + 1}] = true
+			if !isVisitable[Point{X: x, Y: y + 1}] {
+				isVisitable[Point{X: x, Y: y + 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x][y+1])
+			}
 		}
 		// South-west
 		if SW > 0 && !visited[Point{X: x - 1, Y: y + 1}] {
@@ -230,8 +251,11 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x-1][y+1].Cost = SW + cost
 				imgGraph[x-1][y+1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x-1][y+1])
-			isVisitable[Point{X: x - 1, Y: y + 1}] = true
+
+			if !isVisitable[Point{X: x - 1, Y: y + 1}] {
+				isVisitable[Point{X: x - 1, Y: y + 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x-1][y+1])
+			}
 		}
 		// West
 		if W > 0 && !visited[Point{X: x - 1, Y: y}] {
@@ -239,8 +263,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x-1][y].Cost = W + cost
 				imgGraph[x-1][y].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x-1][y])
-			isVisitable[Point{X: x - 1, Y: y}] = true
+			if !isVisitable[Point{X: x - 1, Y: y}] {
+				isVisitable[Point{X: x - 1, Y: y}] = true
+				heap.Push(&visitableNodes, &imgGraph[x-1][y])
+			}
 		}
 		// North-west
 		if NW > 0 && !visited[Point{X: x - 1, Y: y - 1}] {
@@ -248,14 +274,27 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 				imgGraph[x-1][y-1].Cost = NW + cost
 				imgGraph[x-1][y-1].Previous = Point{X: x, Y: y}
 			}
-			heap.Push(&visitableNodes, &imgGraph[x-1][y-1])
-			isVisitable[Point{X: x - 1, Y: y - 1}] = true
+			if !isVisitable[Point{X: x - 1, Y: y - 1}] {
+				isVisitable[Point{X: x - 1, Y: y - 1}] = true
+				heap.Push(&visitableNodes, &imgGraph[x-1][y-1])
+			}
 		}
 	}
+	log.Printf("Shortest path found")
 
-	//while (point != start) {
-	//  trace back previouses back to start
-	//}
+	f, err1 := os.Create("memprofile.mprof")
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+	pprof.WriteHeapProfile(f)
+	f.Close()
+
+	path := Path{}
+	for currentNode != start {
+		path.Add(currentNode)
+		currentNode = imgGraph[currentNode.X][currentNode.Y].Previous
+	}
+
 	return path
 }
 

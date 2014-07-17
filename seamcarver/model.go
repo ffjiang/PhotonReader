@@ -33,7 +33,7 @@ type ImageGraph [][]Vertex
 type Path []Point
 
 func (path *Path) Add(p Point) {
-	*path = append(*path, point)
+	*path = append(*path, p)
 }
 
 type Point image.Point
