@@ -108,7 +108,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph, showVisited bool) {
 
 	// Go along y-axis, or side of page
 	now := time.Now()
-	for j := 0; j < height; j += 50 {
+	for j := 0; j < height; j += 1000 {
 		imgGraphCopy := make(ImageGraph, width)
 		for x := range imgGraphCopy {
 			imgGraphCopy[x] = make([]Vertex, height)
