@@ -10,6 +10,7 @@ import (
 	"math"
 	"os"
 	"runtime/pprof"
+	"time"
 )
 
 func LoadImage(fileName string) image.Image {
@@ -68,49 +69,49 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 
 			// North
 			if y > 0 {
-				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y-1])*5 + 3
+				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y-1]) + 200
 			} else {
 				imgGraph[x][y].Weights[0] = -1
 			}
 			// North-east
 			if x < lumMatrix.NumCols-1 && y > 0 {
-				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1])*3 + 1
+				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1]) + 150
 			} else {
 				imgGraph[x][y].Weights[1] = -1
 			}
 			// East
 			if x < lumMatrix.NumCols-1 {
-				imgGraph[x][y].Weights[2] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x+1][y])
+				imgGraph[x][y].Weights[2] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y]) + 10
 			} else {
 				imgGraph[x][y].Weights[2] = -1
 			}
 			// South-east
 			if x < lumMatrix.NumCols-1 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1])*3 + 1
+				imgGraph[x][y].Weights[3] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1]) + 150
 			} else {
 				imgGraph[x][y].Weights[3] = -1
 			}
 			// South
 			if y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y+1])*5 + 3
+				imgGraph[x][y].Weights[4] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x][y+1]) + 200
 			} else {
 				imgGraph[x][y].Weights[4] = -1
 			}
 			// South-west
 			if x > 0 && y < lumMatrix.NumRows-1 {
-				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1])*3 + 1
+				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1]) + 150
 			} else {
 				imgGraph[x][y].Weights[5] = 0
 			}
 			// West
 			if x > 0 {
-				imgGraph[x][y].Weights[6] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y])*10 + 5
+				imgGraph[x][y].Weights[6] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y]) + 240
 			} else {
 				imgGraph[x][y].Weights[6] = -1
 			}
 			// North-west
 			if x > 0 && y > 0 {
-				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1])*3 + 1
+				imgGraph[x][y].Weights[7] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y-1]) + 150
 			} else {
 				imgGraph[x][y].Weights[7] = -1
 			}
@@ -133,16 +134,22 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 	}
 
 	// Go along y-axis, or side of page
-	for j := 0; j < height; j += 100 {
+	now := time.Now()
+	for j := 0; j < height; j += 50 {
 		imgGraphCopy := make(ImageGraph, width)
 		for x := range imgGraphCopy {
 			imgGraphCopy[x] = make([]Vertex, height)
 			copy(imgGraphCopy[x], imgGraph[x])
 		}
-		path := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
+		path, _ := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
+		log.Printf("Time taken: %v", time.Since(now))
+		/*for _, point := range visited {
+			dstImg.Set(point.X, point.Y, color.RGBA{R: 255, G: 0, B: 0, A: 255})
+		}*/
 		for _, point := range path {
 			dstImg.Set(point.X, point.Y, color.Black)
 		}
+		log.Printf("Time to paint: %v", time.Since(now))
 	}
 
 	// Write result
@@ -152,7 +159,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 }
 
 // Djikstra's shortest path algorithm
-func ShortestPath(start Point, imgGraph ImageGraph) Path {
+func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 	log.Printf("ShortestPath called")
 	// Setup data structures
 	visited := map[Point]bool{}
@@ -294,8 +301,12 @@ func ShortestPath(start Point, imgGraph ImageGraph) Path {
 		path.Add(currentNode)
 		currentNode = imgGraph[currentNode.X][currentNode.Y].Previous
 	}
+	visitedNodes := []Point{}
+	for node, _ := range visited {
+		visitedNodes = append(visitedNodes, node)
+	}
 
-	return path
+	return path, visitedNodes
 }
 
 func WriteImage(img image.Image, filename string) error {
