@@ -114,10 +114,13 @@ func Carve(srcImg image.Image, imgGraph ImageGraph, showVisited bool) {
 			imgGraphCopy[x] = make([]Vertex, height)
 			copy(imgGraphCopy[x], imgGraph[x])
 		}
-		path, visited := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy, showVisited)
+		path, visited, avgHeight := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy, showVisited)
 		log.Printf("Time taken: %v", time.Since(now))
 		for _, point := range visited {
 			dstImg.Set(point.X, point.Y, color.RGBA{R: 255, G: 0, B: 0, A: 255})
+		}
+		for x := 0; x < width; x++ {
+			dstImg.Set(x, avgHeight, color.RGBA{R: 0, G: 255, B: 0, A: 255})
 		}
 		for _, point := range path {
 			dstImg.Set(point.X, point.Y, color.Black)
@@ -132,7 +135,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph, showVisited bool) {
 }
 
 // Djikstra's shortest path algorithm
-func ShortestPath(start Point, imgGraph ImageGraph, showVisited bool) (Path, []Point) {
+func ShortestPath(start Point, imgGraph ImageGraph, showVisited bool) (Path, []Point, int) {
 	log.Printf("ShortestPath called")
 	// Setup data structures
 	visited := map[Point]bool{}
@@ -212,10 +215,19 @@ func ShortestPath(start Point, imgGraph ImageGraph, showVisited bool) (Path, []P
 	f.Close()
 
 	path := Path{}
+	totalHeight := 0
+	count := 0
+	oldY := currentNode.Y
 	for currentNode != start {
 		path.Add(currentNode)
 		currentNode = imgGraph[currentNode.X][currentNode.Y].Previous
+		totalHeight += currentNode.Y - (currentNode.Y-oldY)*1000
+		oldY = currentNode.Y
+		count++
 	}
+
+	avgHeight := totalHeight / count
+
 	visitedNodes := []Point{}
 	if showVisited {
 		for node, _ := range visited {
@@ -223,7 +235,7 @@ func ShortestPath(start Point, imgGraph ImageGraph, showVisited bool) (Path, []P
 		}
 	}
 
-	return path, visitedNodes
+	return path, visitedNodes, avgHeight
 }
 
 func WriteImage(img image.Image, filename string) error {
