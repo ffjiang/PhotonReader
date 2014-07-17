@@ -111,11 +111,11 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 			imgGraphCopy[x] = make([]Vertex, height)
 			copy(imgGraphCopy[x], imgGraph[x])
 		}
-		path, _ := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
+		path, visited := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
 		log.Printf("Time taken: %v", time.Since(now))
-		/*for _, point := range visited {
+		for _, point := range visited {
 			dstImg.Set(point.X, point.Y, color.RGBA{R: 255, G: 0, B: 0, A: 255})
-		}*/
+		}
 		for _, point := range path {
 			dstImg.Set(point.X, point.Y, color.Black)
 		}
@@ -163,35 +163,38 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 		// .. and add to visitable if unvisited
 
 		// North-east
-		if NE >= 0 && !visited[Point{X: x + 1, Y: y - 1}] {
+		nextNode := Point{X: x + 1, Y: y - 1}
+		if NE >= 0 && !visited[nextNode] {
 			if NE+cost < imgGraph[x+1][y-1].Cost {
 				imgGraph[x+1][y-1].Cost = NE + cost
-				imgGraph[x+1][y-1].Previous = Point{X: x, Y: y}
+				imgGraph[x+1][y-1].Previous = currentNode
 			}
-			if !isVisitable[Point{X: x + 1, Y: y - 1}] {
-				isVisitable[Point{X: x + 1, Y: y - 1}] = true
+			if !isVisitable[nextNode] {
+				isVisitable[nextNode] = true
 				heap.Push(&visitableNodes, &imgGraph[x+1][y-1])
 			}
 		}
 		// East
-		if E >= 0 && !visited[Point{X: x + 1, Y: y}] {
+		nextNode = Point{X: x + 1, Y: y}
+		if E >= 0 && !visited[nextNode] {
 			if E+cost < imgGraph[x+1][y].Cost {
 				imgGraph[x+1][y].Cost = E + cost
-				imgGraph[x+1][y].Previous = Point{X: x, Y: y}
+				imgGraph[x+1][y].Previous = currentNode
 			}
-			if !isVisitable[Point{X: x + 1, Y: y}] {
-				isVisitable[Point{X: x + 1, Y: y}] = true
+			if !isVisitable[nextNode] {
+				isVisitable[nextNode] = true
 				heap.Push(&visitableNodes, &imgGraph[x+1][y])
 			}
 		}
 		// South-east
-		if SE >= 0 && !visited[Point{X: x + 1, Y: y + 1}] {
+		nextNode = Point{X: x + 1, Y: y + 1}
+		if SE >= 0 && !visited[nextNode] {
 			if SE+cost < imgGraph[x+1][y+1].Cost {
 				imgGraph[x+1][y+1].Cost = SE + cost
-				imgGraph[x+1][y+1].Previous = Point{X: x, Y: y}
+				imgGraph[x+1][y+1].Previous = currentNode
 			}
-			if !isVisitable[Point{X: x + 1, Y: y + 1}] {
-				isVisitable[Point{X: x + 1, Y: y + 1}] = true
+			if !isVisitable[nextNode] {
+				isVisitable[nextNode] = true
 				heap.Push(&visitableNodes, &imgGraph[x+1][y+1])
 			}
 		}
