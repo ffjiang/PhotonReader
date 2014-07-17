@@ -81,7 +81,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			}
 			// East
 			if x < lumMatrix.NumCols-1 {
-				imgGraph[x][y].Weights[2] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y]) + 10
+				imgGraph[x][y].Weights[2] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x+1][y])
 			} else {
 				imgGraph[x][y].Weights[2] = -1
 			}
@@ -101,7 +101,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			if x > 0 && y < lumMatrix.NumRows-1 {
 				imgGraph[x][y].Weights[5] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x-1][y+1]) + 150
 			} else {
-				imgGraph[x][y].Weights[5] = 0
+				imgGraph[x][y].Weights[5] = -1
 			}
 			// West
 			if x > 0 {
@@ -198,7 +198,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 		// .. and add to visitable if unvisited
 
 		// North
-		if N > 0 && !visited[Point{X: x, Y: y - 1}] {
+		if N >= 0 && !visited[Point{X: x, Y: y - 1}] {
 			if N+cost < imgGraph[x][y-1].Cost {
 				imgGraph[x][y-1].Cost = N + cost
 				imgGraph[x][y-1].Previous = Point{X: x, Y: y}
@@ -209,7 +209,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// North-east
-		if NE > 0 && !visited[Point{X: x + 1, Y: y - 1}] {
+		if NE >= 0 && !visited[Point{X: x + 1, Y: y - 1}] {
 			if NE+cost < imgGraph[x+1][y-1].Cost {
 				imgGraph[x+1][y-1].Cost = NE + cost
 				imgGraph[x+1][y-1].Previous = Point{X: x, Y: y}
@@ -220,7 +220,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// East
-		if E > 0 && !visited[Point{X: x + 1, Y: y}] {
+		if E >= 0 && !visited[Point{X: x + 1, Y: y}] {
 			if E+cost < imgGraph[x+1][y].Cost {
 				imgGraph[x+1][y].Cost = E + cost
 				imgGraph[x+1][y].Previous = Point{X: x, Y: y}
@@ -231,7 +231,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// South-east
-		if SE > 0 && !visited[Point{X: x + 1, Y: y + 1}] {
+		if SE >= 0 && !visited[Point{X: x + 1, Y: y + 1}] {
 			if SE+cost < imgGraph[x+1][y+1].Cost {
 				imgGraph[x+1][y+1].Cost = SE + cost
 				imgGraph[x+1][y+1].Previous = Point{X: x, Y: y}
@@ -242,7 +242,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// South
-		if S > 0 && !visited[Point{X: x, Y: y + 1}] {
+		if S >= 0 && !visited[Point{X: x, Y: y + 1}] {
 			if S+cost < imgGraph[x][y+1].Cost {
 				imgGraph[x][y+1].Cost = S + cost
 				imgGraph[x][y+1].Previous = Point{X: x, Y: y}
@@ -253,7 +253,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// South-west
-		if SW > 0 && !visited[Point{X: x - 1, Y: y + 1}] {
+		if SW >= 0 && !visited[Point{X: x - 1, Y: y + 1}] {
 			if SW+cost < imgGraph[x-1][y+1].Cost {
 				imgGraph[x-1][y+1].Cost = SW + cost
 				imgGraph[x-1][y+1].Previous = Point{X: x, Y: y}
@@ -265,7 +265,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// West
-		if W > 0 && !visited[Point{X: x - 1, Y: y}] {
+		if W >= 0 && !visited[Point{X: x - 1, Y: y}] {
 			if W+cost < imgGraph[x-1][y].Cost {
 				imgGraph[x-1][y].Cost = W + cost
 				imgGraph[x-1][y].Previous = Point{X: x, Y: y}
@@ -276,7 +276,7 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 			}
 		}
 		// North-west
-		if NW > 0 && !visited[Point{X: x - 1, Y: y - 1}] {
+		if NW >= 0 && !visited[Point{X: x - 1, Y: y - 1}] {
 			if NW+cost < imgGraph[x-1][y-1].Cost {
 				imgGraph[x-1][y-1].Cost = NW + cost
 				imgGraph[x-1][y-1].Previous = Point{X: x, Y: y}
