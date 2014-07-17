@@ -13,7 +13,7 @@ type LuminanceMatrix struct {
 type Vertex struct {
 	Cost float64
 	// Energy gradient magnitude in each direction, clockwise starting from north
-	Weights [8]float64
+	Weights [3]float64
 	// Whether this Vertex is connected to the virtual node
 	EndZone bool
 	Coords  Point
