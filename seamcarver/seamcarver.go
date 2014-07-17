@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+// Distance to travel per iteration
+const d int = 1
+
 func LoadImage(fileName string) image.Image {
 	// Load the image file
 	file, err := os.Open(fileName)
@@ -68,19 +71,19 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 			// Each of the weights is the magnitude of the energy gradient, energy being luminance
 
 			// North-east
-			if x < lumMatrix.NumCols-1 && y > 0 {
+			if x < lumMatrix.NumCols-d && y >= d {
 				imgGraph[x][y].Weights[0] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y-1]) + 50
 			} else {
 				imgGraph[x][y].Weights[0] = -1
 			}
 			// East
-			if x < lumMatrix.NumCols-1 {
+			if x < lumMatrix.NumCols-d {
 				imgGraph[x][y].Weights[1] = math.Abs(lumMatrix.Matrix[x][y] - lumMatrix.Matrix[x+1][y])
 			} else {
 				imgGraph[x][y].Weights[1] = -1
 			}
 			// South-east
-			if x < lumMatrix.NumCols-1 && y < lumMatrix.NumRows-1 {
+			if x < lumMatrix.NumCols-d && y < lumMatrix.NumRows-d {
 				imgGraph[x][y].Weights[2] = math.Abs(lumMatrix.Matrix[x][y]-lumMatrix.Matrix[x+1][y+1]) + 50
 			} else {
 				imgGraph[x][y].Weights[2] = -1
@@ -90,7 +93,7 @@ func SetWeights(lumMatrix LuminanceMatrix) ImageGraph {
 	return imgGraph
 }
 
-func Carve(srcImg image.Image, imgGraph ImageGraph) {
+func Carve(srcImg image.Image, imgGraph ImageGraph, showVisited bool) {
 	bounds := srcImg.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
@@ -100,7 +103,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 
 	// Set right hand side of page to be endzone
 	for j := 0; j < height; j++ {
-		imgGraph[width-1][j].EndZone = true
+		imgGraph[width-d][j].EndZone = true
 	}
 
 	// Go along y-axis, or side of page
@@ -111,7 +114,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 			imgGraphCopy[x] = make([]Vertex, height)
 			copy(imgGraphCopy[x], imgGraph[x])
 		}
-		path, visited := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy)
+		path, visited := ShortestPath(Point{X: 0, Y: j}, imgGraphCopy, showVisited)
 		log.Printf("Time taken: %v", time.Since(now))
 		for _, point := range visited {
 			dstImg.Set(point.X, point.Y, color.RGBA{R: 255, G: 0, B: 0, A: 255})
@@ -129,7 +132,7 @@ func Carve(srcImg image.Image, imgGraph ImageGraph) {
 }
 
 // Djikstra's shortest path algorithm
-func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
+func ShortestPath(start Point, imgGraph ImageGraph, showVisited bool) (Path, []Point) {
 	log.Printf("ShortestPath called")
 	// Setup data structures
 	visited := map[Point]bool{}
@@ -163,39 +166,39 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 		// .. and add to visitable if unvisited
 
 		// North-east
-		nextNode := Point{X: x + 1, Y: y - 1}
+		nextNode := Point{X: x + d, Y: y - d}
 		if NE >= 0 && !visited[nextNode] {
-			if NE+cost < imgGraph[x+1][y-1].Cost {
-				imgGraph[x+1][y-1].Cost = NE + cost
-				imgGraph[x+1][y-1].Previous = currentNode
+			if NE+cost < imgGraph[x+d][y-d].Cost {
+				imgGraph[x+d][y-d].Cost = NE + cost
+				imgGraph[x+d][y-d].Previous = currentNode
 			}
 			if !isVisitable[nextNode] {
 				isVisitable[nextNode] = true
-				heap.Push(&visitableNodes, &imgGraph[x+1][y-1])
+				heap.Push(&visitableNodes, &imgGraph[x+d][y-d])
 			}
 		}
 		// East
-		nextNode = Point{X: x + 1, Y: y}
+		nextNode = Point{X: x + d, Y: y}
 		if E >= 0 && !visited[nextNode] {
-			if E+cost < imgGraph[x+1][y].Cost {
-				imgGraph[x+1][y].Cost = E + cost
-				imgGraph[x+1][y].Previous = currentNode
+			if E+cost < imgGraph[x+d][y].Cost {
+				imgGraph[x+d][y].Cost = E + cost
+				imgGraph[x+d][y].Previous = currentNode
 			}
 			if !isVisitable[nextNode] {
 				isVisitable[nextNode] = true
-				heap.Push(&visitableNodes, &imgGraph[x+1][y])
+				heap.Push(&visitableNodes, &imgGraph[x+d][y])
 			}
 		}
 		// South-east
-		nextNode = Point{X: x + 1, Y: y + 1}
+		nextNode = Point{X: x + d, Y: y + d}
 		if SE >= 0 && !visited[nextNode] {
-			if SE+cost < imgGraph[x+1][y+1].Cost {
-				imgGraph[x+1][y+1].Cost = SE + cost
-				imgGraph[x+1][y+1].Previous = currentNode
+			if SE+cost < imgGraph[x+d][y+d].Cost {
+				imgGraph[x+d][y+d].Cost = SE + cost
+				imgGraph[x+d][y+d].Previous = currentNode
 			}
 			if !isVisitable[nextNode] {
 				isVisitable[nextNode] = true
-				heap.Push(&visitableNodes, &imgGraph[x+1][y+1])
+				heap.Push(&visitableNodes, &imgGraph[x+d][y+d])
 			}
 		}
 	}
@@ -214,8 +217,10 @@ func ShortestPath(start Point, imgGraph ImageGraph) (Path, []Point) {
 		currentNode = imgGraph[currentNode.X][currentNode.Y].Previous
 	}
 	visitedNodes := []Point{}
-	for node, _ := range visited {
-		visitedNodes = append(visitedNodes, node)
+	if showVisited {
+		for node, _ := range visited {
+			visitedNodes = append(visitedNodes, node)
+		}
 	}
 
 	return path, visitedNodes
